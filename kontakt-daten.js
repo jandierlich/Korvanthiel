@@ -7,10 +7,10 @@
   bleibt diese Datei unverändert, du musst also nichts erneut ausfüllen.
 */
 window.KONTAKT_DATEN = {
-  name:     "[Vorname Nachname]",
-  strasse:  "[Straße und Hausnummer]",
-  ort:      "[PLZ Ort]",
-  land:     "[Land]",
-  email:    "[name@beispiel.de]",
-  telefon:  "[optional]"
+  name:     "Jan Dierlich",
+  strasse:  "Steenacker 33",
+  ort:      "25499 Tangstedt",
+  land:     "Deutschland",
+  email:    "jandierlich@googlemail.com",
+  telefon:  "+49 162 7112283"
 };
