@@ -744,8 +744,8 @@ const SHIPS = [
     id:'interceptor', name:'INTERCEPTOR',
     desc:'Schlank & wendig', unlockScore:0,
     c1:'#8ff2ff', c2:'#1a6fe0', glow:'#4ef2ff', flame:'#4ef2ff',
-    agility:1.25, fireRateMul:1, shieldBonus:0, hitboxR:16, scoreMul:1,
-    statLine:'Wendigkeit ++',
+    agility:1, fireRateMul:1, shieldBonus:0, hitboxR:16, scoreMul:1,
+    statLine:'Ausgewogenes Standardschiff',
     draw(g,s){
       g.beginPath();
       g.moveTo(0,-1.15*s); g.lineTo(0.5*s,0.55*s); g.lineTo(0.22*s,0.4*s);
@@ -1668,7 +1668,7 @@ function hitPlayer(){
   Audio1.sfxPlayerHit();
   renderShieldBar();
   explode(player.x,player.y,SHIPS[selectedShipIdx].glow,false);
-  addShake(7,0.3);
+  addShake(2.2,0.15);
   combo=0;
   const flash = document.getElementById('hitFlash');
   flash.classList.remove('show'); void flash.offsetWidth; flash.classList.add('show');
