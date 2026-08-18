@@ -364,7 +364,7 @@
 </div>
 
 <div class="overlay" id="startScreen">
-  <div class="panel">
+  <div class="panel" style="max-height:calc(100vh - 90px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;">
     <div class="title">KORVANTHIEL</div>
     <div class="subtitle">ARCADE&nbsp;·&nbsp;SPACE&nbsp;·&nbsp;SURVIVAL</div>
 
@@ -731,7 +731,7 @@ canvas.addEventListener('touchend', e=>{ e.preventDefault(); pointerUp(); }, {pa
 // Sicherheitsnetz gegen iOS-Rubber-Band-Scroll (App rutscht sonst unter die Statusleiste):
 // blockiert Touch-Scrollen überall, außer innerhalb des scrollbaren Anleitung-Panels.
 document.addEventListener('touchmove', e=>{
-  if(e.target.closest('#howToScreen .panel')) return;
+  if(e.target.closest('#howToScreen .panel, #startScreen .panel, #upgradesScreen .panel')) return;
   e.preventDefault();
 }, {passive:false});
 canvas.addEventListener('mousedown', e=> pointerDown(e.clientX,e.clientY));

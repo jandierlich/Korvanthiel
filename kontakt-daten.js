@@ -12,5 +12,5 @@ window.KONTAKT_DATEN = {
   ort:      "25499 Tangstedt",
   land:     "Deutschland",
   email:    "jandierlich@googlemail.com",
-  telefon:  "[optional]"
+  telefon:  "+49 162 7112283"
 };
