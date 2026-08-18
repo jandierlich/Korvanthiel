@@ -197,6 +197,12 @@
     background:rgba(78,242,255,0.18);border-color:var(--neon-cyan);color:var(--neon-cyan);
     box-shadow:0 0 12px rgba(78,242,255,0.35);text-shadow:0 0 6px rgba(78,242,255,0.6);
   }
+  #startScreen .subtitle{ margin-bottom:12px; }
+  #startScreen .ship-select{ margin:10px 0 4px 0; }
+  #startScreen #shipPreviewCanvas{ width:92px;height:92px; }
+  #startScreen #startBtn{ margin:8px 10px; }
+  #startScreen .btn-row{ display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:2px; }
+  #startScreen .btn-row .btn{ margin:0; }
   .weapon-icons{
     position:fixed;bottom:calc(14px + env(safe-area-inset-bottom));left:0;right:0;
     display:flex;justify-content:center;gap:14px;z-index:5;pointer-events:none;
@@ -364,7 +370,7 @@
 </div>
 
 <div class="overlay" id="startScreen">
-  <div class="panel" style="max-height:calc(100vh - 90px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;">
+  <div class="panel" style="padding:26px 28px;max-height:calc(100vh - 50px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;">
     <div class="title">KORVANTHIEL</div>
     <div class="subtitle">ARCADE&nbsp;·&nbsp;SPACE&nbsp;·&nbsp;SURVIVAL</div>
 
@@ -386,7 +392,7 @@
     <div class="info-line">Wische über den Bildschirm, um dein Schiff zu steuern.</div>
     <div class="score-big mono" id="bestScoreDisplay">BESTWERT 0</div>
     <button class="btn" id="startBtn">START</button>
-    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+    <div class="btn-row">
       <button class="btn alt" id="howToBtn" style="padding:10px 22px;font-size:12px;">ANLEITUNG</button>
       <button class="btn alt" id="statsBtn" style="padding:10px 22px;font-size:12px;">STATISTIK</button>
       <button class="btn alt" id="upgradesBtn" style="padding:10px 22px;font-size:12px;">AUSBAU</button>
