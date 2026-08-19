@@ -537,7 +537,8 @@
 <div class="overlay hidden" id="dailyScreen">
   <div class="panel">
     <div class="title" style="font-size:24px;">TAGES-CHALLENGE</div>
-    <div class="info-line">Für alle identische Gegnerwellen — fairer Vergleich mit Freunden. Feste Schwierigkeit (Normal), festes Schiff (Interceptor).</div>
+    <div class="info-line">Für alle identische Gegnerwellen — fairer Vergleich mit Freunden. Feste Schwierigkeit (Normal), festes Schiff (Interceptor), feste Welt (Nebelfeld).</div>
+    <div class="info-line" style="margin-top:6px;">Deine Kampagnen-Auswahl bleibt danach unverändert.</div>
     <div class="score-big mono" id="dailyBestDisplay">HEUTE: 0</div>
     <button class="btn" id="dailyStartBtn">CHALLENGE STARTEN</button>
     <button class="btn alt" id="closeDailyBtn">ZURÜCK</button>
@@ -592,7 +593,7 @@ resize();
 /* ---------------- Utility ---------------- */
 const TAU = Math.PI*2;
 let dailyMode = false, dailySeedRng = null;
-let dailySavedShip = null, dailySavedDiff = null;
+let dailySavedShip = null, dailySavedDiff = null, dailySavedWorld = null;
 function mulberry32(seed){
   return function(){
     seed |= 0; seed = seed + 0x6D2B79F5 | 0;
@@ -2573,7 +2574,9 @@ function quitToMenu(){
     dailyMode = false;
     if(dailySavedShip!==null) selectedShipIdx = dailySavedShip;
     if(dailySavedDiff!==null) selectedDifficultyIdx = dailySavedDiff;
-    dailySavedShip = null; dailySavedDiff = null;
+    if(dailySavedWorld!==null) currentWorldIdx = dailySavedWorld;
+    dailySavedShip = null; dailySavedDiff = null; dailySavedWorld = null;
+    updateWorldBadge();
   }
   state = STATE.MENU;
   document.getElementById('pauseScreen').classList.add('hidden');
@@ -2597,9 +2600,9 @@ document.getElementById('closeDailyBtn').addEventListener('click', ()=>{
   document.getElementById('startScreen').classList.remove('hidden');
 });
 document.getElementById('dailyStartBtn').addEventListener('click', ()=>{
-  dailySavedShip = selectedShipIdx; dailySavedDiff = selectedDifficultyIdx;
+  dailySavedShip = selectedShipIdx; dailySavedDiff = selectedDifficultyIdx; dailySavedWorld = currentWorldIdx;
   dailyMode = true;
-  selectedShipIdx = 0; selectedDifficultyIdx = 1;
+  selectedShipIdx = 0; selectedDifficultyIdx = 1; currentWorldIdx = 0;
   document.getElementById('dailyScreen').classList.add('hidden');
   startGame();
 });
