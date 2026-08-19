@@ -416,7 +416,6 @@
   <div class="wicon active" id="wBlaster">I<span class="wicon-label">BLASTER</span></div>
   <div class="wicon" id="wSpread">V<span class="wicon-label">SPREAD</span><span class="wicon-badge" id="wSpreadBadge"></span></div>
   <div class="wicon" id="wLaser">=<span class="wicon-label">LASER</span><span class="wicon-badge" id="wLaserBadge"></span></div>
-  <div class="wicon" id="wMissile">^<span class="wicon-label">MISSILE</span><span class="wicon-badge" id="wMissileBadge"></span></div>
   <div class="wicon ultimate" id="wUltimate">✺<span class="wicon-label">BOMBE</span><span class="wicon-badge" id="wUltimateBadge"></span></div>
 </div>
 
@@ -470,10 +469,9 @@
     <p class="howto-p">
       <b>I — Blaster:</b> Standard-Dauerfeuer, unbegrenzt<br>
       <b>V — Spread:</b> Fächerschuss, trifft mehrere Ziele gleichzeitig<br>
-      <b>= — Laser:</b> durchschlagender Dauerstrahl, hoher Schaden<br>
-      <b>^ — Missile:</b> zielsuchende Rakete, folgt dem nächsten Gegner
+      <b>= — Laser:</b> durchschlagender Dauerstrahl, hoher Schaden
     </p>
-    <p class="howto-p">Das jeweils leuchtende Feld zeigt deine aktuell aktive Waffe. Spread/Laser/Missile sammelst du über Power-Ups ein und laufen nach kurzer Zeit wieder auf den Blaster zurück.</p>
+    <p class="howto-p">Das jeweils leuchtende Feld zeigt deine aktuell aktive Waffe. Spread/Laser sammelst du über Power-Ups ein und laufen nach kurzer Zeit wieder auf den Blaster zurück.</p>
     <h3 class="howto-h">Ultimate-Bombe (✺)</h3>
     <p class="howto-p">Füllt sich durch Abschüsse. Bei 100% antippen, um alle Gegner und gegnerischen Projektile auf dem Bildschirm zu zerstören (Bosse erleiden schweren Schaden statt sofort zu sterben).</p>
     <h3 class="howto-h">Power-Ups</h3>
@@ -667,7 +665,6 @@ const Audio1 = {
   sfxShoot(kind){
     if(kind==='spread') this.tone(rand(520,620),0.09,'square',0.08,300);
     else if(kind==='laser') this.tone(900,0.14,'sawtooth',0.07,200);
-    else if(kind==='missile') this.tone(200,0.18,'triangle',0.12,90);
     else this.tone(rand(700,820),0.07,'square',0.09,340);
   },
   sfxExplosion(big){
@@ -982,10 +979,16 @@ function drawGrid(dt, t){
 }
 
 /* ---------------- Input: Wischtechnik (Touch/Mouse Drag) ---------------- */
-const input = { active:false, x:0, y:0, lastX:0, lastY:0 };
-function pointerDown(x,y){ input.active=true; input.x=x; input.y=y; input.lastX=x; input.lastY=y; Audio1.init(); Audio1.resume(); }
-function pointerMove(x,y){ if(input.active){ input.x=x; input.y=y; } }
-function pointerUp(){ input.active=false; }
+const input = { active:false, dx:0, dy:0, lastX:0, lastY:0 };
+function pointerDown(x,y){ input.active=true; input.lastX=x; input.lastY=y; input.dx=0; input.dy=0; Audio1.init(); Audio1.resume(); }
+function pointerMove(x,y){
+  if(input.active){
+    input.dx += x - input.lastX;
+    input.dy += y - input.lastY;
+    input.lastX = x; input.lastY = y;
+  }
+}
+function pointerUp(){ input.active=false; input.dx=0; input.dy=0; }
 
 canvas.addEventListener('touchstart', e=>{ e.preventDefault(); const t=e.touches[0]; pointerDown(t.clientX,t.clientY); }, {passive:false});
 canvas.addEventListener('touchmove', e=>{ e.preventDefault(); const t=e.touches[0]; pointerMove(t.clientX,t.clientY); }, {passive:false});
@@ -1242,10 +1245,10 @@ function getDailyBest(){
   return (daily.date===todayDateString()) ? (daily.score||0) : 0;
 }
 
-const WEAPONS = ['blaster','spread','laser','missile'];
+const WEAPONS = ['blaster','spread','laser'];
 let currentWeapon = 'blaster';
 // Vorrat (in Sekunden) je gesammelter Zusatzwaffe. Blaster ist immer verfügbar.
-let weaponTimers = { spread:0, laser:0, missile:0 };
+let weaponTimers = { spread:0, laser:0 };
 let fireCooldown = 0;
 let trailTimer = 0;
 
@@ -1406,7 +1409,7 @@ function spawnAsteroid(x,y,size){
 }
 
 function spawnPowerup(x,y){
-  const kinds = ['spread','laser','missile','shield','score'];
+  const kinds = ['spread','laser','shield','score'];
   const kind = kinds[randi(0,kinds.length-1)];
   powerups.push({x,y,vy:70,kind,r:12,phase:rand(0,TAU)});
 }
@@ -1611,9 +1614,8 @@ function selectWeapon(kind){
 document.getElementById('wBlaster').addEventListener('click', ()=>selectWeapon('blaster'));
 document.getElementById('wSpread').addEventListener('click', ()=>selectWeapon('spread'));
 document.getElementById('wLaser').addEventListener('click', ()=>selectWeapon('laser'));
-document.getElementById('wMissile').addEventListener('click', ()=>selectWeapon('missile'));
 function updateWeaponIcons(){
-  ['Blaster','Spread','Laser','Missile'].forEach(k=>{
+  ['Blaster','Spread','Laser'].forEach(k=>{
     const key = k.toLowerCase();
     const el = document.getElementById('w'+k);
     const available = key==='blaster' || weaponTimers[key]>0;
@@ -1646,9 +1648,6 @@ function firePlayer(){
   } else if(currentWeapon==='laser'){
     bullets.push({x:px,y:py,vx:0,vy:-980,r:5,dmg:2,color:'#ffe93a', laser:true});
     fireCooldown=0.1/frMul;
-  } else if(currentWeapon==='missile'){
-    bullets.push({x:px,y:py,vx:rand(-20,20),vy:-420,r:5,dmg:3,color:'#39ff8f', homing:true});
-    fireCooldown=0.32/frMul;
   }
   Audio1.sfxShoot(currentWeapon);
 }
@@ -1689,13 +1688,13 @@ function update(dt){
     if(s.life<=0) shockwaves.splice(i,1);
   }
 
-  // Spielerbewegung: Schiff folgt dem Finger, aber mit Versatz nach oben,
-  // damit der Finger das eigene Schiff beim Wischen nicht verdeckt.
-  const FINGER_OFFSET_Y = 110;
+  // Spielerbewegung: Schiff bewegt sich nur um die tatsächlich zurückgelegte
+  // Wischstrecke — ein reiner Tipp ohne Bewegung verändert die Position nicht.
   const edgeMargin = player.r + 4;
-  if(input.active){
-    player.targetX = clamp(input.x, edgeMargin, W-edgeMargin);
-    player.targetY = clamp(input.y - FINGER_OFFSET_Y, H*0.08, H-18);
+  if(input.dx || input.dy){
+    player.targetX = clamp(player.targetX + input.dx, edgeMargin, W-edgeMargin);
+    player.targetY = clamp(player.targetY + input.dy, H*0.08, H-18);
+    input.dx = 0; input.dy = 0;
   }
   const shipAgility = SHIPS[selectedShipIdx].agility || 1;
   const sens = currentSensitivity();
@@ -1738,16 +1737,6 @@ function update(dt){
   // Bullets
   for(let i=bullets.length-1;i>=0;i--){
     const b = bullets[i];
-    if(b.homing){
-      let target=null, best=1e12;
-      for(const e of enemies){ const d=dist2(b.x,b.y,e.x,e.y); if(d<best){best=d;target=e;} }
-      if(target){
-        const dx=target.x-b.x, dy=target.y-b.y, len=Math.hypot(dx,dy)||1;
-        b.vx += (dx/len)*380*dt; b.vy += (dy/len)*380*dt;
-        const sp = Math.hypot(b.vx,b.vy);
-        if(sp>520){ b.vx=b.vx/sp*520; b.vy=b.vy/sp*520; }
-      }
-    }
     b.x += b.vx*dt; b.y += b.vy*dt;
     if(b.y< -20 || b.y>H+20 || b.x<-20 || b.x>W+20){ bullets.splice(i,1); continue; }
   }
@@ -2399,8 +2388,8 @@ function drawPowerup(p){
   ctx.translate(p.x,p.y);
   const pulse = 1+Math.sin(p.phase*5)*0.15;
   ctx.scale(pulse,pulse);
-  const colors = {spread:'#ff8c1a', laser:'#ffe93a', missile:'#39ff8f', shield:'#39f6ff', score:'#ff2fd6'};
-  const labels = {spread:'V', laser:'=', missile:'^', shield:'+', score:'$'};
+  const colors = {spread:'#ff8c1a', laser:'#ffe93a', shield:'#39f6ff', score:'#ff2fd6'};
+  const labels = {spread:'V', laser:'=', shield:'+', score:'$'};
   ctx.shadowColor=colors[p.kind]; ctx.shadowBlur=16;
   ctx.strokeStyle=colors[p.kind]; ctx.fillStyle='rgba(5,0,15,0.8)'; ctx.lineWidth=2;
   ctx.beginPath(); ctx.arc(0,0,p.r,0,TAU); ctx.fill(); ctx.stroke();
@@ -2504,7 +2493,7 @@ function startGame(){
   frostfields=[]; geysers=[]; gravwells=[]; lavapools=[];
   agilityDebuffTimer=0; frostDebuffTimer=0;
   bossesDefeatedThisRun = 0;
-  currentWeapon='blaster'; weaponTimers={spread:0,laser:0,missile:0}; updateWeaponIcons();
+  currentWeapon='blaster'; weaponTimers={spread:0,laser:0}; updateWeaponIcons();
   resetPlayer();
   document.getElementById('scoreVal').textContent='0';
   renderShieldBar();
