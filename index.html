@@ -391,6 +391,10 @@
 </div>
 
 <div class="wave-banner" id="waveBanner"></div>
+<div class="campaign-banner" id="worldTransitionBanner">
+  <div class="cb-title" id="worldTransitionName">—</div>
+  <div class="cb-sub">Neuer Sektor — die Reise geht weiter</div>
+</div>
 <div class="campaign-banner" id="campaignCompleteBanner">
   <div class="cb-title">KAMPAGNE ABGESCHLOSSEN</div>
   <div class="cb-sub">Du hast alle Sektoren erobert — die Reise geht als Endlos-Überlebenskampf weiter.</div>
@@ -475,12 +479,13 @@
     <h3 class="howto-h">Power-Ups</h3>
     <p class="howto-p">Farbige Kapseln, die abgeschossene Gegner manchmal fallen lassen: Waffen-Upgrades, ein Schild-Punkt (+) oder Bonus-Punkte ($).</p>
     <h3 class="howto-h">Kampagne — Welten</h3>
-    <p class="howto-p">Besiege die ersten beiden Sektor-Bosse einer Welt (Welle 10), um die nächste freizuschalten. Jede Welt hat eigene Gefahren:</p>
+    <p class="howto-p">Besiege 4 Sektor-Bosse einer Welt (Welle 20), um die nächste freizuschalten. Jede Welt hat eigene Gefahren:</p>
     <p class="howto-p">
       <b>Frostgürtel:</b> Frostfelder verlangsamen deine Steuerung bei Berührung. Kristallwächter zersplittern beim Tod in Eisschrapnell.<br>
       <b>Vulkanring:</b> Lavageysire warnen kurz, bevor sie ausbrechen — rechtzeitig ausweichen. Magmabestien hinterlassen brennende Lachen.<br>
       <b>Ruinenflotte:</b> Gravitationsfelder und Wächterkerne ziehen dein Schiff aus der Bahn.
     </p>
+    <p class="howto-p">Im Kampagne-Bildschirm wählst du den Modus: <b>KAMPAGNE</b> wechselt nach dem 4. Boss automatisch in die nächste Welt, <b>ENDLOS</b> bleibt dauerhaft in der gewählten Welt.</p>
     <h3 class="howto-h">Ausbau &amp; Tages-Challenge</h3>
     <p class="howto-p">Im Hauptmenü unter <b>AUSBAU</b> kaufst du mit gesammeltem Sternenstaub dauerhafte Verbesserungen. Die <b>TAGES-CHALLENGE</b> nutzt für alle identische Gegnerwellen (fester Seed) — perfekt zum fairen Vergleich mit Freunden.</p>
     <h3 class="howto-h">Pause &amp; Beenden</h3>
@@ -517,7 +522,12 @@
 <div class="overlay hidden" id="worldScreen">
   <div class="panel" style="text-align:left;max-height:80vh;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;">
     <div class="title" style="font-size:24px;text-align:center;">KAMPAGNE</div>
-    <div class="info-line" style="text-align:center;margin-bottom:14px;">Besiege die ersten beiden Sektor-Bosse (Welle 10), um die nächste Welt freizuschalten.</div>
+    <div class="info-line" style="text-align:center;margin-bottom:10px;">Besiege 4 Sektor-Bosse (Welle 20), um die nächste Welt freizuschalten.</div>
+    <div class="diff-select" id="modeSelect" style="margin-bottom:6px;">
+      <button class="diff-chip" data-mode="campaign">KAMPAGNE</button>
+      <button class="diff-chip" data-mode="endless">ENDLOS</button>
+    </div>
+    <div class="info-line" id="modeDescLabel" style="text-align:center;margin-bottom:14px;">—</div>
     <div id="worldCompleteNote" class="hidden" style="text-align:center;color:var(--neon-green);font-size:12px;font-weight:700;letter-spacing:1px;margin-bottom:14px;">✓ ALLE SEKTOREN EROBERT</div>
     <div id="worldList"></div>
     <button class="btn" id="closeWorldBtn" style="margin-top:18px;width:100%;box-sizing:border-box;">ZURÜCK</button>
@@ -761,16 +771,40 @@ function markWorldCleared(id){
   }
 }
 let bossesDefeatedThisRun = 0;
-const WORLD_BOSSES_TO_CLEAR = 2;
+const WORLD_BOSSES_TO_CLEAR = 4;
+let gameMode = localStorage.getItem('korvanthielGameMode') || 'campaign';
 function onBossDefeated(){
   bossesDefeatedThisRun++;
   if(bossesDefeatedThisRun >= WORLD_BOSSES_TO_CLEAR){
     markWorldCleared(currentWorld().id);
-    if(currentWorldIdx === WORLDS.length-1 && !localStorage.getItem('korvanthielCampaignDone')){
+    const hasNextWorld = currentWorldIdx < WORLDS.length-1;
+    if(!dailyMode && hasNextWorld && gameMode==='campaign'){
+      setTimeout(()=>transitionToNextWorld(), 1600);
+    } else if(currentWorldIdx === WORLDS.length-1 && !localStorage.getItem('korvanthielCampaignDone')){
       localStorage.setItem('korvanthielCampaignDone','1');
       showCampaignComplete();
     }
   }
+}
+function transitionToNextWorld(){
+  currentWorldIdx++;
+  localStorage.setItem('korvanthielWorld', String(currentWorldIdx));
+  bossesDefeatedThisRun = 0;
+  frostfields=[]; geysers=[]; gravwells=[]; lavapools=[];
+  enemies=[]; enemyBullets=[]; asteroids=[];
+  initStars();
+  Audio1.stopMusic();
+  if(Audio1.enabled) Audio1.startMusic(currentWorld().musicRoot, currentWorld().musicFilter, currentWorld().musicType);
+  showWorldTransitionBanner(currentWorld().name);
+  startWave(1);
+}
+function showWorldTransitionBanner(name){
+  const el = document.getElementById('worldTransitionBanner');
+  if(!el) return;
+  document.getElementById('worldTransitionName').textContent = name;
+  el.classList.add('show');
+  addShake(6,0.3);
+  setTimeout(()=>el.classList.remove('show'), 2600);
 }
 function showCampaignComplete(){
   const el = document.getElementById('campaignCompleteBanner');
@@ -786,7 +820,25 @@ function currentWorld(){ return WORLDS[currentWorldIdx]; }
 function updateWorldBadge(){
   document.getElementById('worldBadge').textContent = '🌍 ' + currentWorld().name + ' ›';
 }
+const MODE_DESC = {
+  campaign:'Springt automatisch in die nächste Welt, sobald du 4 Bosse besiegt hast.',
+  endless:'Bleibt dauerhaft in der gewählten Welt, auch nach dem 4. Boss.'
+};
+function updateModeUI(){
+  document.querySelectorAll('#modeSelect .diff-chip').forEach(el=>{
+    el.classList.toggle('active', el.dataset.mode===gameMode);
+  });
+  document.getElementById('modeDescLabel').textContent = MODE_DESC[gameMode];
+}
+document.querySelectorAll('#modeSelect .diff-chip').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    gameMode = el.dataset.mode;
+    localStorage.setItem('korvanthielGameMode', gameMode);
+    updateModeUI();
+  });
+});
 function renderWorldScreen(){
+  updateModeUI();
   const list = document.getElementById('worldList');
   list.innerHTML = '';
   const allCleared = WORLDS[WORLDS.length-1] && clearedWorlds.includes(WORLDS[WORLDS.length-1].id);
@@ -799,7 +851,7 @@ function renderWorldScreen(){
     card.innerHTML = `
       <div>
         <div class="world-card-name${unlocked?'':' locked'}">${unlocked?w.name:'🔒 '+w.name}</div>
-        <div class="world-card-desc">${unlocked?w.desc:'Schalte frei, indem du die ersten beiden Bosse von „'+(WORLDS.find(x=>x.id===w.unlockRequires)?.name||'')+'“ besiegst (Welle 10).'}</div>
+        <div class="world-card-desc">${unlocked?w.desc:'Schalte frei, indem du 4 Bosse von „'+(WORLDS.find(x=>x.id===w.unlockRequires)?.name||'')+'“ besiegst (Welle 20).'}</div>
       </div>
       <button class="world-select-btn${isCurrent?' current':''}" ${unlocked?'':'disabled'}>${isCurrent?'AKTIV':'WÄHLEN'}</button>
     `;
