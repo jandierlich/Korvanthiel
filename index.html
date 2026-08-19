@@ -1018,7 +1018,7 @@ const SHIPS = [
   },
   {
     id:'vanguard', name:'VANGUARD',
-    desc:'Breiter Deltaflügel, robust', unlockScore:2000,
+    desc:'Breiter Deltaflügel, robust', unlockScore:8000,
     c1:'#ffd08a', c2:'#e05a1a', glow:'#ff9d2e', flame:'#ff9d2e',
     agility:0.82, fireRateMul:0.9, shieldBonus:1, hitboxR:18, scoreMul:1,
     statLine:'Schild ++, aber träger',
@@ -1031,7 +1031,7 @@ const SHIPS = [
   },
   {
     id:'phantom', name:'PHANTOM',
-    desc:'Stealth, doppelte Finnen', unlockScore:6000,
+    desc:'Stealth, doppelte Finnen', unlockScore:25000,
     c1:'#d9b3ff', c2:'#5a1aa8', glow:'#a742ff', flame:'#a742ff',
     agility:1.05, fireRateMul:1.2, shieldBonus:0, hitboxR:13, scoreMul:1,
     statLine:'Feuerrate ++, kleines Ziel',
@@ -1045,7 +1045,7 @@ const SHIPS = [
   },
   {
     id:'aurora', name:'AURORA',
-    desc:'Organisch, runde Linien', unlockScore:12000,
+    desc:'Organisch, runde Linien', unlockScore:60000,
     c1:'#b6ffe0', c2:'#0fae72', glow:'#4dffab', flame:'#4dffab',
     agility:1, fireRateMul:1, shieldBonus:1, hitboxR:16, scoreMul:1.1,
     statLine:'Ausgewogen, Punktebonus ++',
@@ -1659,7 +1659,8 @@ function addScore(base){
   combo++;
   sessionMaxCombo = Math.max(sessionMaxCombo, combo);
   const shipScoreMul = (SHIPS[selectedShipIdx].scoreMul || 1) * (1 + upgradeEffect('score'));
-  const bonus = Math.floor(base * (1 + combo*0.12) * shipScoreMul);
+  const comboMul = 1 + Math.min(combo, 20)*0.12;
+  const bonus = Math.floor(base * comboMul * shipScoreMul);
   score += bonus;
   document.getElementById('scoreVal').textContent = score;
   if(KILLSTREAK_MESSAGES[combo]){
