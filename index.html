@@ -278,6 +278,23 @@
     transition:opacity 0.35s ease, transform 0.35s ease;
   }
   .wave-banner.show{opacity:1;transform:scale(1);}
+  .campaign-banner{
+    position:fixed;top:30%;left:0;right:0;text-align:center;z-index:12;
+    pointer-events:none;opacity:0;transform:scale(0.9);
+    transition:opacity 0.5s ease, transform 0.5s ease;
+    padding:0 20px;
+  }
+  .campaign-banner.show{opacity:1;transform:scale(1);}
+  .campaign-banner .cb-title{
+    font-size:28px;letter-spacing:3px;font-weight:800;
+    background:linear-gradient(90deg, var(--neon-green), var(--neon-cyan), var(--neon-magenta));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 20px rgba(77,255,171,0.6));
+  }
+  .campaign-banner .cb-sub{
+    margin-top:8px;font-size:13px;letter-spacing:1px;color:#dbeaff;
+    text-shadow:0 0 10px rgba(78,242,255,0.5);
+  }
   .streak-banner{
     position:fixed;top:22%;left:0;right:0;text-align:center;
     font-size:26px;letter-spacing:4px;font-weight:800;z-index:6;
@@ -374,6 +391,10 @@
 </div>
 
 <div class="wave-banner" id="waveBanner"></div>
+<div class="campaign-banner" id="campaignCompleteBanner">
+  <div class="cb-title">KAMPAGNE ABGESCHLOSSEN</div>
+  <div class="cb-sub">Du hast alle Sektoren erobert — die Reise geht als Endlos-Überlebenskampf weiter.</div>
+</div>
 <div class="streak-banner" id="streakBanner"></div>
 <div class="hit-flash" id="hitFlash"></div>
 
@@ -454,7 +475,7 @@
     <h3 class="howto-h">Power-Ups</h3>
     <p class="howto-p">Farbige Kapseln, die abgeschossene Gegner manchmal fallen lassen: Waffen-Upgrades, ein Schild-Punkt (+) oder Bonus-Punkte ($).</p>
     <h3 class="howto-h">Kampagne — Welten</h3>
-    <p class="howto-p">Besiege den Sektor-Boss (Welle 5), um die nächste Welt freizuschalten. Jede Welt hat eigene Gefahren:</p>
+    <p class="howto-p">Besiege die ersten beiden Sektor-Bosse einer Welt (Welle 10), um die nächste freizuschalten. Jede Welt hat eigene Gefahren:</p>
     <p class="howto-p">
       <b>Frostgürtel:</b> Frostfelder verlangsamen deine Steuerung bei Berührung. Kristallwächter zersplittern beim Tod in Eisschrapnell.<br>
       <b>Vulkanring:</b> Lavageysire warnen kurz, bevor sie ausbrechen — rechtzeitig ausweichen. Magmabestien hinterlassen brennende Lachen.<br>
@@ -496,7 +517,8 @@
 <div class="overlay hidden" id="worldScreen">
   <div class="panel" style="text-align:left;max-height:80vh;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;">
     <div class="title" style="font-size:24px;text-align:center;">KAMPAGNE</div>
-    <div class="info-line" style="text-align:center;margin-bottom:14px;">Besiege den Sektor-Boss, um die nächste Welt freizuschalten.</div>
+    <div class="info-line" style="text-align:center;margin-bottom:14px;">Besiege die ersten beiden Sektor-Bosse (Welle 10), um die nächste Welt freizuschalten.</div>
+    <div id="worldCompleteNote" class="hidden" style="text-align:center;color:var(--neon-green);font-size:12px;font-weight:700;letter-spacing:1px;margin-bottom:14px;">✓ ALLE SEKTOREN EROBERT</div>
     <div id="worldList"></div>
     <button class="btn" id="closeWorldBtn" style="margin-top:18px;width:100%;box-sizing:border-box;">ZURÜCK</button>
   </div>
@@ -737,6 +759,27 @@ function markWorldCleared(id){
     localStorage.setItem('korvanthielWorldsCleared', JSON.stringify(clearedWorlds));
   }
 }
+let bossesDefeatedThisRun = 0;
+const WORLD_BOSSES_TO_CLEAR = 2;
+function onBossDefeated(){
+  bossesDefeatedThisRun++;
+  if(bossesDefeatedThisRun >= WORLD_BOSSES_TO_CLEAR){
+    markWorldCleared(currentWorld().id);
+    if(currentWorldIdx === WORLDS.length-1 && !localStorage.getItem('korvanthielCampaignDone')){
+      localStorage.setItem('korvanthielCampaignDone','1');
+      showCampaignComplete();
+    }
+  }
+}
+function showCampaignComplete(){
+  const el = document.getElementById('campaignCompleteBanner');
+  if(!el) return;
+  el.classList.add('show');
+  addShake(10,0.4);
+  Audio1.tone(440,0.4,'sine',0.2,880);
+  setTimeout(()=>Audio1.tone(660,0.5,'sine',0.2,1320), 250);
+  setTimeout(()=>el.classList.remove('show'), 5000);
+}
 function currentWorld(){ return WORLDS[currentWorldIdx]; }
 
 function updateWorldBadge(){
@@ -745,6 +788,8 @@ function updateWorldBadge(){
 function renderWorldScreen(){
   const list = document.getElementById('worldList');
   list.innerHTML = '';
+  const allCleared = WORLDS[WORLDS.length-1] && clearedWorlds.includes(WORLDS[WORLDS.length-1].id);
+  document.getElementById('worldCompleteNote').classList.toggle('hidden', !allCleared);
   WORLDS.forEach((w,idx)=>{
     const unlocked = isWorldUnlocked(idx);
     const isCurrent = idx===currentWorldIdx;
@@ -753,7 +798,7 @@ function renderWorldScreen(){
     card.innerHTML = `
       <div>
         <div class="world-card-name${unlocked?'':' locked'}">${unlocked?w.name:'🔒 '+w.name}</div>
-        <div class="world-card-desc">${unlocked?w.desc:'Schalte frei, indem du den Boss von „'+(WORLDS.find(x=>x.id===w.unlockRequires)?.name||'')+'“ besiegst.'}</div>
+        <div class="world-card-desc">${unlocked?w.desc:'Schalte frei, indem du die ersten beiden Bosse von „'+(WORLDS.find(x=>x.id===w.unlockRequires)?.name||'')+'“ besiegst (Welle 10).'}</div>
       </div>
       <button class="world-select-btn${isCurrent?' current':''}" ${unlocked?'':'disabled'}>${isCurrent?'AKTIV':'WÄHLEN'}</button>
     `;
@@ -1231,7 +1276,7 @@ function useUltimate(){
         addScore(e.points);
         spawnPowerup(e.x-20,e.y); spawnPowerup(e.x+20,e.y);
         document.getElementById('bossBar').classList.add('hidden');
-        markWorldCleared(currentWorld().id);
+        onBossDefeated();
         enemies.splice(i,1);
       }
     } else {
@@ -1378,7 +1423,7 @@ function startWave(n){
     addShake(1.6,0.3);
   } else {
     waveState='calm'; waveStateTimer = 1.6;
-    waveKillsNeeded = Math.min(34, 6 + Math.floor(n*2.2));
+    waveKillsNeeded = Math.min(42, 8 + Math.floor(n*2.6));
     waveEnemiesLeft = waveKillsNeeded;
   }
 }
@@ -1724,7 +1769,7 @@ function update(dt){
             addScore(e.points);
             spawnPowerup(e.x-20,e.y); spawnPowerup(e.x+20,e.y); spawnPowerup(e.x,e.y-20);
             document.getElementById('bossBar').classList.add('hidden');
-            markWorldCleared(currentWorld().id);
+            onBossDefeated();
           } else {
             explode(e.x,e.y,e.color,e.type==='cruiser');
             addScore(e.points);
@@ -2404,6 +2449,7 @@ function startGame(){
   bullets=[]; enemyBullets=[]; enemies=[]; asteroids=[]; powerups=[]; particles=[];
   frostfields=[]; geysers=[]; gravwells=[]; lavapools=[];
   agilityDebuffTimer=0; frostDebuffTimer=0;
+  bossesDefeatedThisRun = 0;
   currentWeapon='blaster'; weaponTimers={spread:0,laser:0,missile:0}; updateWeaponIcons();
   resetPlayer();
   document.getElementById('scoreVal').textContent='0';
