@@ -197,7 +197,7 @@
     background:rgba(78,242,255,0.18);border-color:var(--neon-cyan);color:var(--neon-cyan);
     box-shadow:0 0 12px rgba(78,242,255,0.35);text-shadow:0 0 6px rgba(78,242,255,0.6);
   }
-  #startScreen .subtitle{ margin-bottom:8px; }
+  #startScreen .subtitle{ margin-bottom:14px; }
   .world-badge{
     display:inline-block;margin:0 auto 8px auto;padding:6px 14px;border-radius:20px;
     background:rgba(78,242,255,0.08);border:1px solid rgba(78,242,255,0.3);
@@ -205,10 +205,10 @@
     cursor:pointer;
   }
   .world-badge:active{ transform:scale(0.96); }
-  #startScreen .ship-select{ margin:10px 0 4px 0; }
-  #startScreen #shipPreviewCanvas{ width:80px;height:80px; }
-  #startScreen #startBtn{ margin:8px 10px; }
-  #startScreen .btn-row{ display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:2px; }
+  #startScreen .ship-select{ margin:16px 0 8px 0; }
+  #startScreen #shipPreviewCanvas{ width:88px;height:88px; }
+  #startScreen #startBtn{ margin:16px 10px; }
+  #startScreen .btn-row{ display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px; }
   #startScreen .btn-row .btn{ margin:0; }
   .weapon-icons{
     position:fixed;right:calc(16px + env(safe-area-inset-right));top:50%;
@@ -420,7 +420,7 @@
 </div>
 
 <div class="overlay" id="startScreen">
-  <div class="panel" style="padding:26px 28px;max-height:calc(100vh - 50px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;position:relative;">
+  <div class="panel" style="padding:38px 28px;max-height:calc(100vh - 50px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;position:relative;">
     <div class="iconbtn" id="settingsBtn" style="position:absolute;top:14px;right:14px;z-index:3;">⚙</div>
     <div class="title">KORVANTHIEL</div>
     <div class="subtitle">ARCADE&nbsp;·&nbsp;SPACE&nbsp;·&nbsp;SURVIVAL</div>
@@ -512,7 +512,14 @@
       <button class="diff-chip" data-idx="1">NORMAL</button>
       <button class="diff-chip" data-idx="2">DIREKT</button>
     </div>
-    <div class="info-line" id="sensDesc" style="margin-top:6px;">Ausgewogene Reaktion</div>
+    <div class="info-line" id="sensDesc" style="margin-top:6px;margin-bottom:18px;">Ausgewogene Reaktion</div>
+    <div class="info-line" style="margin-bottom:14px;">Wischverstärkung — wie viel mehr Strecke das Schiff im Vergleich zum Finger zurücklegt.</div>
+    <div class="diff-select" id="ampSelect">
+      <button class="diff-chip" data-idx="0">1:1</button>
+      <button class="diff-chip" data-idx="1">VERSTÄRKT</button>
+      <button class="diff-chip" data-idx="2">STARK</button>
+    </div>
+    <div class="info-line" id="ampDesc" style="margin-top:6px;">Schiff legt mehr Strecke zurück als der Finger</div>
     <button class="btn" id="closeSettingsBtn" style="margin-top:20px;">ZURÜCK</button>
   </div>
 </div>
@@ -1081,8 +1088,26 @@ document.querySelectorAll('#sensSelect .diff-chip').forEach(el=>{
     updateSensUI();
   });
 });
+const AMP_LEVELS = [1, 1.35, 1.7];
+const AMP_DESC = ['Schiff folgt exakt der Fingerstrecke', 'Schiff legt mehr Strecke zurück als der Finger', 'Schiff legt deutlich mehr Strecke zurück als der Finger'];
+let selectedAmpIdx = parseInt(localStorage.getItem('korvanthielAmp')||'1',10);
+function currentSwipeAmplify(){ return AMP_LEVELS[selectedAmpIdx] ?? 1.35; }
+function updateAmpUI(){
+  document.querySelectorAll('#ampSelect .diff-chip').forEach((el,i)=>{
+    el.classList.toggle('active', i===selectedAmpIdx);
+  });
+  document.getElementById('ampDesc').textContent = AMP_DESC[selectedAmpIdx];
+}
+document.querySelectorAll('#ampSelect .diff-chip').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    selectedAmpIdx = parseInt(el.dataset.idx,10);
+    localStorage.setItem('korvanthielAmp', String(selectedAmpIdx));
+    updateAmpUI();
+  });
+});
 document.getElementById('settingsBtn').addEventListener('click', ()=>{
   updateSensUI();
+  updateAmpUI();
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('settingsScreen').classList.remove('hidden');
 });
@@ -1690,10 +1715,12 @@ function update(dt){
 
   // Spielerbewegung: Schiff bewegt sich nur um die tatsächlich zurückgelegte
   // Wischstrecke — ein reiner Tipp ohne Bewegung verändert die Position nicht.
+  // Wischverstärkung ist einstellbar (Einstellungen-Bildschirm) — Schiff legt mehr Strecke zurück als der Finger.
+  const swipeAmp = currentSwipeAmplify();
   const edgeMargin = player.r + 4;
   if(input.dx || input.dy){
-    player.targetX = clamp(player.targetX + input.dx, edgeMargin, W-edgeMargin);
-    player.targetY = clamp(player.targetY + input.dy, H*0.08, H-18);
+    player.targetX = clamp(player.targetX + input.dx*swipeAmp, edgeMargin, W-edgeMargin);
+    player.targetY = clamp(player.targetY + input.dy*swipeAmp, H*0.08, H-18);
     input.dx = 0; input.dy = 0;
   }
   const shipAgility = SHIPS[selectedShipIdx].agility || 1;
