@@ -204,15 +204,16 @@
   #startScreen .btn-row{ display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:2px; }
   #startScreen .btn-row .btn{ margin:0; }
   .weapon-icons{
-    position:fixed;bottom:calc(14px + env(safe-area-inset-bottom));left:0;right:0;
-    display:flex;justify-content:center;gap:14px;z-index:5;pointer-events:none;
+    position:fixed;right:calc(16px + env(safe-area-inset-right));top:50%;
+    transform:translateY(-50%);
+    display:flex;flex-direction:column;gap:12px;z-index:5;pointer-events:none;
   }
   .wicon{
     position:relative;
-    width:50px;height:50px;border-radius:16px;
+    width:46px;height:46px;border-radius:16px;
     border:1px solid rgba(255,255,255,0.14);
     display:flex;align-items:center;justify-content:center;
-    font-size:17px;font-weight:800;color:rgba(255,255,255,0.28);
+    font-size:16px;font-weight:800;color:rgba(255,255,255,0.28);
     background:linear-gradient(160deg, rgba(30,18,55,0.65), rgba(10,5,22,0.75));
     backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);
@@ -221,7 +222,8 @@
   }
   .wicon:active{ transform:scale(0.92); }
   .wicon .wicon-label{
-    position:absolute; top:-16px; left:50%; transform:translateX(-50%); white-space:nowrap;
+    position:absolute; top:50%; right:100%; transform:translateY(-50%); white-space:nowrap;
+    margin-right:8px;
     font-size:8px; letter-spacing:1px; font-weight:700; color:rgba(255,255,255,0.3);
   }
   .wicon.available{
@@ -370,7 +372,8 @@
 </div>
 
 <div class="overlay" id="startScreen">
-  <div class="panel" style="padding:26px 28px;max-height:calc(100vh - 50px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;">
+  <div class="panel" style="padding:26px 28px;max-height:calc(100vh - 50px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;position:relative;">
+    <div class="iconbtn" id="settingsBtn" style="position:absolute;top:14px;right:14px;z-index:3;">⚙</div>
     <div class="title">KORVANTHIEL</div>
     <div class="subtitle">ARCADE&nbsp;·&nbsp;SPACE&nbsp;·&nbsp;SURVIVAL</div>
 
@@ -441,6 +444,20 @@
     <div class="stat-row"><span class="stat-label">Beste Combo</span><span class="stat-value mono" id="statCombo">0</span></div>
     <div class="stat-row"><span class="stat-label">Weiteste Welle</span><span class="stat-value mono" id="statWave">0</span></div>
     <button class="btn" id="closeStatsBtn" style="margin-top:18px;">ZURÜCK</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="settingsScreen">
+  <div class="panel">
+    <div class="title" style="font-size:24px;">EINSTELLUNGEN</div>
+    <div class="info-line" style="margin-bottom:14px;">Steuerungs-Sensibilität — wie direkt das Schiff deinem Finger folgt.</div>
+    <div class="diff-select" id="sensSelect">
+      <button class="diff-chip" data-idx="0">RUHIG</button>
+      <button class="diff-chip" data-idx="1">NORMAL</button>
+      <button class="diff-chip" data-idx="2">DIREKT</button>
+    </div>
+    <div class="info-line" id="sensDesc" style="margin-top:6px;">Ausgewogene Reaktion</div>
+    <button class="btn" id="closeSettingsBtn" style="margin-top:20px;">ZURÜCK</button>
   </div>
 </div>
 
@@ -804,6 +821,32 @@ const SHIPS = [
   }
 ];
 let selectedShipIdx = parseInt(localStorage.getItem('korvanthielShip')||'0',10);
+const SENS_LEVELS = [0.75, 1, 1.35];
+const SENS_DESC = ['Ruhiger, weniger empfindlich', 'Ausgewogene Reaktion', 'Sehr direkt, folgt sofort'];
+let selectedSensIdx = parseInt(localStorage.getItem('korvanthielSens')||'1',10);
+function currentSensitivity(){ return SENS_LEVELS[selectedSensIdx] ?? 1; }
+function updateSensUI(){
+  document.querySelectorAll('#sensSelect .diff-chip').forEach((el,i)=>{
+    el.classList.toggle('active', i===selectedSensIdx);
+  });
+  document.getElementById('sensDesc').textContent = SENS_DESC[selectedSensIdx];
+}
+document.querySelectorAll('#sensSelect .diff-chip').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    selectedSensIdx = parseInt(el.dataset.idx,10);
+    localStorage.setItem('korvanthielSens', String(selectedSensIdx));
+    updateSensUI();
+  });
+});
+document.getElementById('settingsBtn').addEventListener('click', ()=>{
+  updateSensUI();
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('settingsScreen').classList.remove('hidden');
+});
+document.getElementById('closeSettingsBtn').addEventListener('click', ()=>{
+  document.getElementById('settingsScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+});
 if(!(selectedShipIdx>=0 && selectedShipIdx<SHIPS.length)) selectedShipIdx = 0;
 function shipUnlocked(idx){ return SHIPS[idx].unlockScore<=bestScore; }
 
@@ -1009,7 +1052,7 @@ function useUltimate(){
   updateUltimateUI();
   Audio1.sfxExplosion(true);
   Audio1.tone(140,0.5,'sawtooth',0.2,40);
-  addShake(14,0.5);
+  addShake(7,0.35);
   const flash = document.getElementById('hitFlash');
   flash.style.background = 'radial-gradient(ellipse at center, rgba(255,62,224,0) 30%, rgba(255,62,224,0.5) 100%)';
   flash.classList.remove('show'); void flash.offsetWidth; flash.classList.add('show');
@@ -1125,7 +1168,7 @@ function explode(x,y,color,big){
     });
   }
   shockwaves.push({x,y,r:4,maxR:big?110:55,life:1,color});
-  addShake(big?9:4, big?0.35:0.18);
+  addShake(big?5:2, big?0.3:0.12);
   Audio1.sfxExplosion(big);
 }
 
@@ -1155,7 +1198,7 @@ function startWave(n){
     bossIntro.active = true;
     bossIntro.timer = 2.4;
     bossIntro.number = bossNumber;
-    addShake(3,0.4);
+    addShake(1.6,0.3);
   } else {
     waveState='calm'; waveStateTimer = 1.6;
     waveKillsNeeded = Math.min(34, 6 + Math.floor(n*2.2));
@@ -1358,13 +1401,15 @@ function update(dt){
   // Spielerbewegung: Schiff folgt dem Finger, aber mit Versatz nach oben,
   // damit der Finger das eigene Schiff beim Wischen nicht verdeckt.
   const FINGER_OFFSET_Y = 110;
+  const edgeMargin = player.r + 4;
   if(input.active){
-    player.targetX = clamp(input.x, 24, W-24);
-    player.targetY = clamp(input.y - FINGER_OFFSET_Y, H*0.1, H-24);
+    player.targetX = clamp(input.x, edgeMargin, W-edgeMargin);
+    player.targetY = clamp(input.y - FINGER_OFFSET_Y, H*0.08, H-18);
   }
   const shipAgility = SHIPS[selectedShipIdx].agility || 1;
-  player.x += (player.targetX-player.x)*Math.min(1, dt*10*shipAgility);
-  player.y += (player.targetY-player.y)*Math.min(1, dt*10*shipAgility);
+  const sens = currentSensitivity();
+  player.x += (player.targetX-player.x)*Math.min(1, dt*10*shipAgility*sens);
+  player.y += (player.targetY-player.y)*Math.min(1, dt*10*shipAgility*sens);
 
   trailTimer -= dt;
   if(trailTimer<=0 && state===STATE.PLAY){
@@ -1481,7 +1526,7 @@ function update(dt){
           if(e.type==='boss'){
             explode(e.x,e.y,e.color,true);
             explode(e.x+e.r*0.4,e.y-e.r*0.3,'#fff',true);
-            addShake(16,0.55);
+            addShake(8,0.35);
             addScore(e.points);
             spawnPowerup(e.x-20,e.y); spawnPowerup(e.x+20,e.y); spawnPowerup(e.x,e.y-20);
             document.getElementById('bossBar').classList.add('hidden');
@@ -1642,7 +1687,7 @@ function updateBoss(e, dt){
           const ang = base + (k-(cone-1)/2)*0.13;
           enemyBullets.push({x:e.x,y:e.y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,r:5,color:'#ff8c1a'});
         }
-        addShake(4,0.15);
+        addShake(2,0.12);
       }
     } else {
       e.teleportTimer -= dt;
@@ -1674,7 +1719,7 @@ function hitPlayer(){
   Audio1.sfxPlayerHit();
   renderShieldBar();
   explode(player.x,player.y,SHIPS[selectedShipIdx].glow,false);
-  addShake(2.2,0.15);
+  addShake(1.2,0.12);
   combo=0;
   const flash = document.getElementById('hitFlash');
   flash.classList.remove('show'); void flash.offsetWidth; flash.classList.add('show');
@@ -2003,13 +2048,13 @@ renderPreview();
 
 function updateDifficultyUI(){
   const d = currentDifficulty();
-  document.querySelectorAll('.diff-chip').forEach(btn=>{
+  document.querySelectorAll('#diffSelect .diff-chip').forEach(btn=>{
     btn.classList.toggle('active', parseInt(btn.dataset.idx,10)===selectedDifficultyIdx);
   });
   document.getElementById('diffDescLabel').textContent = d.desc;
   localStorage.setItem('korvanthielDifficulty', String(selectedDifficultyIdx));
 }
-document.querySelectorAll('.diff-chip').forEach(btn=>{
+document.querySelectorAll('#diffSelect .diff-chip').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     selectedDifficultyIdx = parseInt(btn.dataset.idx,10);
     updateDifficultyUI();
