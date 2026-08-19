@@ -160,6 +160,8 @@
   }
   .btn.locked:active{ transform:none; }
   .btn.alt{border-color:rgba(255,62,224,0.55);box-shadow:0 4px 24px rgba(255,62,224,0.25), inset 0 1px 0 rgba(255,255,255,0.15);}
+  .btn.alt.confirm{border-color:#ff4444;color:#ff8888;box-shadow:0 4px 24px rgba(255,68,68,0.35), inset 0 1px 0 rgba(255,255,255,0.15);}
+  .btn:disabled{opacity:0.35;cursor:not-allowed;}
   .info-line{font-size:13px;color:#a9c2ec;margin:4px 0;letter-spacing:0.3px;font-weight:500;}
   .score-big{font-size:26px;font-weight:800;color:var(--neon-green);text-shadow:0 0 12px rgba(77,255,171,0.6);margin:12px 0;}
   .ship-select{
@@ -545,7 +547,8 @@
     <div class="score-big mono" style="text-align:center;font-size:18px;">✦ <span id="stardustVal">0</span> STERNENSTAUB</div>
     <div class="info-line" style="text-align:center;margin-bottom:14px;">Dauerhafte Verbesserungen, gelten für alle künftigen Runs.</div>
     <div id="upgradesList"></div>
-    <button class="btn" id="closeUpgradesBtn" style="margin-top:18px;width:100%;box-sizing:border-box;">ZURÜCK</button>
+    <button class="btn alt" id="resetUpgradesBtn" style="margin-top:16px;width:100%;box-sizing:border-box;font-size:12px;padding:12px;">ZURÜCKSETZEN</button>
+    <button class="btn" id="closeUpgradesBtn" style="margin-top:10px;width:100%;box-sizing:border-box;">ZURÜCK</button>
   </div>
 </div>
 
@@ -1192,10 +1195,10 @@ let sessionKills = 0, sessionMaxCombo = 0, lastRunStardust = 0;
 let stardust = parseInt(localStorage.getItem('korvanthielStardust')||'0',10);
 const MAX_UPGRADE_LEVEL = 5;
 const UPGRADE_DEFS = {
-  shield:   {name:'PANZERUNG',        desc:'+1 maximales Schildsegment pro Stufe', costBase:80, costMul:1.55, effectPerLevel:1},
-  fireRate: {name:'FEUERLEITSYSTEM',  desc:'+4% Feuerrate pro Stufe',              costBase:70, costMul:1.55, effectPerLevel:0.04},
-  magnet:   {name:'SAMMELMAGNET',     desc:'Größere Einzugsreichweite für Power-Ups', costBase:60, costMul:1.5, effectPerLevel:14},
-  score:    {name:'GEWINNPROTOKOLL',  desc:'+3% Punkte pro Stufe',                 costBase:90, costMul:1.6, effectPerLevel:0.03}
+  shield:   {name:'PANZERUNG',        desc:'+1 maximales Schildsegment pro Stufe', costBase:150, costMul:1.6, effectPerLevel:1},
+  fireRate: {name:'FEUERLEITSYSTEM',  desc:'+4% Feuerrate pro Stufe',              costBase:130, costMul:1.6, effectPerLevel:0.04},
+  magnet:   {name:'SAMMELMAGNET',     desc:'Größere Einzugsreichweite für Power-Ups', costBase:110, costMul:1.55, effectPerLevel:14},
+  score:    {name:'GEWINNPROTOKOLL',  desc:'+3% Punkte pro Stufe',                 costBase:170, costMul:1.65, effectPerLevel:0.03}
 };
 let upgrades = {};
 try{ upgrades = JSON.parse(localStorage.getItem('korvanthielUpgrades')||'{}'); }catch(e){ upgrades = {}; }
@@ -1218,6 +1221,25 @@ function buyUpgrade(key){
   upgrades[key] = lvl+1;
   localStorage.setItem('korvanthielStardust', String(stardust));
   localStorage.setItem('korvanthielUpgrades', JSON.stringify(upgrades));
+  renderUpgradesScreen();
+}
+function totalSpentOnUpgrades(){
+  let total = 0;
+  Object.keys(UPGRADE_DEFS).forEach(key=>{
+    const def = UPGRADE_DEFS[key];
+    const lvl = upgrades[key]||0;
+    for(let l=0;l<lvl;l++){ total += Math.round(def.costBase * Math.pow(def.costMul, l)); }
+  });
+  return total;
+}
+let resetArmed = false;
+function resetUpgrades(){
+  const refund = totalSpentOnUpgrades();
+  stardust += refund;
+  Object.keys(UPGRADE_DEFS).forEach(key=>{ upgrades[key] = 0; });
+  localStorage.setItem('korvanthielStardust', String(stardust));
+  localStorage.setItem('korvanthielUpgrades', JSON.stringify(upgrades));
+  resetArmed = false;
   renderUpgradesScreen();
 }
 function renderUpgradesScreen(){
@@ -1243,6 +1265,14 @@ function renderUpgradesScreen(){
     }
     list.appendChild(row);
   });
+  const resetBtn = document.getElementById('resetUpgradesBtn');
+  const totalSpent = totalSpentOnUpgrades();
+  resetArmed = false;
+  if(resetBtn){
+    resetBtn.textContent = 'ZURÜCKSETZEN';
+    resetBtn.classList.remove('confirm');
+    resetBtn.disabled = totalSpent===0;
+  }
 }
 
 function updateStatsOnGameOver(){
@@ -1250,7 +1280,7 @@ function updateStatsOnGameOver(){
   stats.bestCombo = Math.max(stats.bestCombo, sessionMaxCombo);
   stats.bestWave = Math.max(stats.bestWave, wave);
   localStorage.setItem('korvanthielStats', JSON.stringify(stats));
-  lastRunStardust = Math.floor(score/40) + sessionKills;
+  lastRunStardust = Math.floor(score/120);
   stardust += lastRunStardust;
   localStorage.setItem('korvanthielStardust', String(stardust));
   if(dailyMode){
@@ -2618,6 +2648,22 @@ document.getElementById('upgradesBtn').addEventListener('click', ()=>{
 document.getElementById('closeUpgradesBtn').addEventListener('click', ()=>{
   document.getElementById('upgradesScreen').classList.add('hidden');
   document.getElementById('startScreen').classList.remove('hidden');
+});
+document.getElementById('resetUpgradesBtn').addEventListener('click', function(){
+  if(!resetArmed){
+    resetArmed = true;
+    this.textContent = 'WIRKLICH? NOCHMAL TIPPEN';
+    this.classList.add('confirm');
+    setTimeout(()=>{
+      if(resetArmed){
+        resetArmed = false;
+        this.textContent = 'ZURÜCKSETZEN';
+        this.classList.remove('confirm');
+      }
+    }, 3000);
+  } else {
+    resetUpgrades();
+  }
 });
 document.getElementById('retryBtn').addEventListener('click', startGame);
 document.getElementById('pauseBtn').addEventListener('click', ()=>{
